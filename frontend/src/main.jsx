@@ -3,11 +3,15 @@ import { StrictMode } from "react";
 import initGame from "./initGame";
 import "./index.css";
 import websocketService from './services/websocket';
+import App from "./App";
+
 
 const ui = document.getElementById("ui");
 
-createRoot(ui).render(
+createRoot(root).render(
   <StrictMode>
+    <App/>
+    
   </StrictMode>
 );
 

@@ -10,7 +10,7 @@ const initGame = () => {
   // Game boundaries
   const GAME_WIDTH = 1920;
   const GAME_HEIGHT = 1080;
-  const WALL_THICKNESS = 10;
+  const WALL_THICKNESS = 15;
 
   // Load sprites
   k.loadSprite("background", "./NewPiskel.png");
