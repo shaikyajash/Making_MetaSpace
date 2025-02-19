@@ -6,7 +6,6 @@ import websocketService from './services/websocket';
 import App from "./App";
 
 
-const ui = document.getElementById("ui");
 
 createRoot(root).render(
   <StrictMode>

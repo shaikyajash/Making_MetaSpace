@@ -1,21 +1,26 @@
-
+// src/kaplayCtx.js
 import kaplay from "kaplay";
 
 const initKaplay = () => {
+  // Calculate height accounting for navbar
+  const navbarHeight = 50; // Height of the navbar
+  const windowHeight = window.innerHeight;
+  const gameHeight = windowHeight - navbarHeight;
+
   return kaplay({
     width: 1920,
     height: 1080,
-    letterbox: true, // allows the canvas to scale the canvas regardless the screen size while maintaining the 1920x1080 aspect ratio
-
-    global: false, // this makes sure that we cannot call kaplay functions globally because by default kaplay functions can be called globally
-
-    debug: true, //TODO: put back to false in production
-
-    debugKey: "f2", // this is the key that will be used to toggle the debug mode on and off
-
+    letterbox: true,
     canvas: document.getElementById("game"),
-
-    pixelDensity: devicePixelRatio, // this will make sure that the canvas will be rendered in the same resolution as the screen resolution, and the graphics are sharp
+    global: false,
+    debug: true,
+    debugKey: "f2",
+    pixelDensity: devicePixelRatio,
+    // Add canvas style options
+    canvasStyle: {
+      height: `calc(100vh - ${navbarHeight}px)`, // Subtract navbar height
+      marginBottom: `${navbarHeight}px`, // Add margin for navbar
+    },
   });
 };
 
