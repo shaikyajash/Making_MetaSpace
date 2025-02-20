@@ -16,11 +16,7 @@ const initKaplay = () => {
     debug: true,
     debugKey: "f2",
     pixelDensity: devicePixelRatio,
-    // Add canvas style options
-    canvasStyle: {
-      height: `calc(100vh - ${navbarHeight}px)`, // Subtract navbar height
-      marginBottom: `${navbarHeight}px`, // Add margin for navbar
-    },
+    
   });
 };
 

@@ -74,18 +74,18 @@ const initGame = () => {
   };
 
   // WebSocket event handlers
-  websocketService.on('INIT', (data) => {
-    mainPlayer = createPlayer(data.playerId);
-    setupPlayerControls(mainPlayer);
-    
-    data.players.forEach((p) => {
-      if (p.id !== data.playerId) {
-        const remotePlayer = createPlayer(p.id, k.vec2(p.position.x, p.position.y));
-        otherPlayers.set(p.id, remotePlayer);
-      }
-    });
+ // src/initGame.js
+websocketService.on('INIT', (data) => {
+  mainPlayer = createPlayer(data.playerId);
+  setupPlayerControls(mainPlayer);
+  
+  data.players.forEach((p) => {
+    if (p.id !== data.playerId) {
+      const remotePlayer = createPlayer(p.id, k.vec2(p.position.x, p.position.y));
+      otherPlayers.set(p.id, remotePlayer);
+    }
   });
-
+});
   websocketService.on('PLAYER_JOINED', (data) => {
     const remotePlayer = createPlayer(data.player.id, k.vec2(data.player.position.x, data.player.position.y));
     otherPlayers.set(data.player.id, remotePlayer);
@@ -122,18 +122,17 @@ const initGame = () => {
 
   const setupPlayerControls = (player) => {
     player.onUpdate(() => {
-      // Store previous position
       player.prevPos = player.pos.clone();
       const prevAnim = player.getCurAnim().name;
-
+  
       player.direction.x = 0;
       player.direction.y = 0;
-
+  
       if (k.isKeyDown("left")) player.direction.x = -1;
       if (k.isKeyDown("right")) player.direction.x = 1;
       if (k.isKeyDown("up")) player.direction.y = -1;
       if (k.isKeyDown("down")) player.direction.y = 1;
-
+  
       // Calculate new position
       let newPos = player.pos.clone();
       if (player.direction.x && player.direction.y) {
@@ -141,11 +140,11 @@ const initGame = () => {
       } else {
         newPos = newPos.add(player.direction.scale(player.speed * k.dt()));
       }
-
+  
       // Only check wall collisions
       const hasWallCollision = checkCollisionWithWalls(newPos);
       const canMove = !hasWallCollision;
-
+  
       // Animation logic
       if (player.direction.eq(k.vec2(-1, 0)) && player.getCurAnim().name !== "left") {
         player.play("left");
@@ -164,17 +163,17 @@ const initGame = () => {
         player.play(newAnim);
         player.currentAnim = newAnim;
       }
-
+  
       // Move if no wall collision
       if (canMove) {
         player.pos = newPos;
       }
-
+  
       // Keep in bounds (extra safety)
       const margin = WALL_THICKNESS;
       player.pos.x = Math.max(margin, Math.min(GAME_WIDTH - margin, player.pos.x));
       player.pos.y = Math.max(margin, Math.min(GAME_HEIGHT - margin, player.pos.y));
-
+  
       // Send updates
       if (!player.prevPos.eq(player.pos) || prevAnim !== player.getCurAnim().name) {
         websocketService.send({
