@@ -2,10 +2,10 @@
 import kaplay from "kaplay";
 
 const initKaplay = () => {
-  // Calculate height accounting for navbar
-  const navbarHeight = 50; // Height of the navbar
+  const navbarHeight = 70;
   const windowHeight = window.innerHeight;
   const gameHeight = windowHeight - navbarHeight;
+  const gameWidth = window.innerWidth * 0.8; // 80% of window width
 
   return kaplay({
     width: 1920,
@@ -16,7 +16,10 @@ const initKaplay = () => {
     debug: true,
     debugKey: "f2",
     pixelDensity: devicePixelRatio,
-    
+    canvasStyle: {
+      width: '80%', // Match the CSS width
+      height: `calc(100vh - ${navbarHeight}px)`,
+    },
   });
 };
 

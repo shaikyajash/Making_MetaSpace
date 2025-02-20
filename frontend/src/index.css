@@ -13,21 +13,22 @@ body {
   font-family: 'Inter', sans-serif;
   background: #0F172A;
   color: #F8FAFC;
+  display: flex;
 }
 
 #game {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
+  right: 0; /* Changed from left to right */
+  width: 80%; /* Adjust this value to control canvas width */
   height: calc(100% - 70px);
 }
 
 #root {
-  pointer-events: none; /* Allow clicking through to the game canvas */
+  pointer-events: none;
+  width: 100%;
 }
 
-/* Make specific UI elements clickable */
 #root > * {
   pointer-events: auto;
 }
