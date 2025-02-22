@@ -13,6 +13,7 @@ const initKaplay = () => {
     debugKey: "f2",
     pixelDensity: devicePixelRatio,
     background: '#0F172A', // Hex color
+    scale: 1,
    
   });
 };

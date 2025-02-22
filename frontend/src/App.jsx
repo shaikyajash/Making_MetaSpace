@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import ChatPanel from './components/ChatPanel'; 
 import Navbar from './components/NavBar';
+import GameWrapper from './components/GameWrapper';
+import './App.css';
+
 
 const App = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -21,6 +24,10 @@ const App = () => {
 
   return (
     <>
+    <div className='Game'  >
+
+    <GameWrapper/>
+    </div>
       <ChatPanel 
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}

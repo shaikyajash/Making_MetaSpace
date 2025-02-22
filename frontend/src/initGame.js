@@ -1,19 +1,17 @@
-// src/initGame.js
-import websocketService from './services/websocket';
+// frontend/src/initGame.js
 import initKaplay from "./kaplayCtx";
 
-const initGame = () => {
+const initGame = (socket, playerId, players) => {
   const DIAGONAL_FACTOR = 1 / Math.sqrt(2);
   const k = initKaplay();
   let mainPlayer = null;
-  let mainPlayerId = null;
   const otherPlayers = new Map();
 
   const BACKGROUND_CONFIG = {
     width: 368,
     height: 192,
     scale: 8,
-    margin: 20, // Margin from edges
+    margin: 20,
   };
 
   // Load sprites
@@ -37,7 +35,6 @@ const initGame = () => {
   k.add([k.sprite("background"), k.pos(0, 0), k.scale(BACKGROUND_CONFIG.scale)]);
 
   const isWithinBounds = (pos) => {
-    // Calculate bounds based on scaled background size
     const minX = BACKGROUND_CONFIG.margin;
     const maxX = (BACKGROUND_CONFIG.width * BACKGROUND_CONFIG.scale) - BACKGROUND_CONFIG.margin;
     const minY = BACKGROUND_CONFIG.margin;
@@ -82,6 +79,13 @@ const initGame = () => {
       player.play(newAnim);
       player.currentAnim = newAnim;
     }
+  };
+
+  const emitUpdate = (position, animation) => {
+    socket?.emit('PLAYER_UPDATE', {
+      position,
+      animation
+    });
   };
 
   const setupPlayerControls = (player) => {
@@ -157,13 +161,12 @@ const initGame = () => {
       // Update animation based on movement direction
       updatePlayerAnimation(player, player.direction);
 
-      // Send updates
+      // Send updates using Socket.IO
       if (!player.prevPos.eq(player.pos) || prevAnim !== player.currentAnim) {
-        websocketService.send({
-          type: 'PLAYER_UPDATE',
-          position: { x: player.pos.x, y: player.pos.y },
-          animation: player.currentAnim
-        });
+        emitUpdate(
+          { x: player.pos.x, y: player.pos.y },
+          player.currentAnim
+        );
       }
     });
   };
@@ -183,31 +186,19 @@ const initGame = () => {
     });
   };
 
-  // WebSocket handlers remain the same
-  websocketService.on('INIT', (data) => {
-    mainPlayerId = data.playerId;
-    mainPlayer = createPlayer(data.playerId);
-    setupPlayerControls(mainPlayer);
-    setupCamera(mainPlayer);
-    
-    data.players.forEach((p) => {
-      if (p.id !== data.playerId) {
-        const remotePlayer = createPlayer(p.id, k.vec2(p.position.x, p.position.y));
-        otherPlayers.set(p.id, remotePlayer);
-      }
-    });
-  });
-
-  websocketService.on('PLAYER_JOINED', (data) => {
-    const remotePlayer = createPlayer(data.player.id, k.vec2(data.player.position.x, data.player.position.y));
+  // Set up socket event handlers for other players
+  socket?.on('PLAYER_JOINED', (data) => {
+    const remotePlayer = createPlayer(
+      data.player.id,
+      k.vec2(data.player.position.x, data.player.position.y)
+    );
     otherPlayers.set(data.player.id, remotePlayer);
   });
 
-  websocketService.on('PLAYER_UPDATED', (data) => {
+  socket?.on('PLAYER_UPDATED', (data) => {
     const player = otherPlayers.get(data.playerId);
     if (player) {
       player.pos = k.vec2(data.position.x, data.position.y);
-      
       if (player.currentAnim !== data.animation) {
         player.play(data.animation);
         player.currentAnim = data.animation;
@@ -215,7 +206,7 @@ const initGame = () => {
     }
   });
 
-  websocketService.on('PLAYER_LEFT', (data) => {
+  socket?.on('PLAYER_LEFT', (data) => {
     const player = otherPlayers.get(data.playerId);
     if (player) {
       player.destroy();
@@ -223,8 +214,36 @@ const initGame = () => {
     }
   });
 
+  // Initialize main player
+  if (playerId) {
+    mainPlayer = createPlayer(playerId);
+    setupPlayerControls(mainPlayer);
+    setupCamera(mainPlayer);
+  }
+
+  // Initialize other players
+  players.forEach((playerData, id) => {
+    if (id !== playerId) {
+      const remotePlayer = createPlayer(
+        id,
+        k.vec2(playerData.position.x, playerData.position.y)
+      );
+      otherPlayers.set(id, remotePlayer);
+    }
+  });
+
+  // Return cleanup function
   return () => {
+    if (mainPlayer) {
+      mainPlayer.destroy();
+    }
+    otherPlayers.forEach(player => player.destroy());
     otherPlayers.clear();
+    
+    // Remove socket listeners
+    socket?.off('PLAYER_JOINED');
+    socket?.off('PLAYER_UPDATED');
+    socket?.off('PLAYER_LEFT');
   };
 };
 
