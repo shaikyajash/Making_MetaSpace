@@ -1,4 +1,3 @@
-/* src/index.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 * {
@@ -13,22 +12,9 @@ body {
   font-family: 'Inter', sans-serif;
   background: #0F172A;
   color: #F8FAFC;
-  display: flex;
+  overflow: hidden;
 }
 
-#game {
-  position: absolute;
-  top: 0;
-  right: 0; /* Changed from left to right */
-  width: 80%; /* Adjust this value to control canvas width */
-  height: calc(100% - 70px);
-}
-
-#root {
-  pointer-events: none;
-  width: 100%;
-}
-
-#root > * {
-  pointer-events: auto;
+button {
+  font-family: 'Inter', sans-serif;
 }

@@ -1,6 +1,5 @@
-// src/App.jsx
 import React, { useState } from 'react';
-import ChatPanel from './components/ChatPanel';
+import ChatPanel from './components/ChatPanel'; 
 import Navbar from './components/NavBar';
 
 const App = () => {
@@ -22,14 +21,12 @@ const App = () => {
 
   return (
     <>
-    
       <ChatPanel 
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         videoEnabled={videoEnabled}
         audioEnabled={audioEnabled}
       />
-      
       <Navbar 
         onToggleChat={handleToggleChat}
         isChatOpen={isChatOpen}

@@ -1,62 +1,65 @@
+// src/initGame.js
 import websocketService from './services/websocket';
 import initKaplay from "./kaplayCtx";
 
 const initGame = () => {
-  const DIAGONAL_FACTOR = 1 / Math.sqrt(2);
+  // Constants
+  const GAME_CONFIG = {
+    width: 1920,
+    height: 1080,
+    wallThickness: 15,
+    playerSpeed: 300,
+    diagonalFactor: 1 / Math.sqrt(2)
+  };
+
+  // Game state
   const k = initKaplay();
   let mainPlayer = null;
+  let mainPlayerId = null;
   const otherPlayers = new Map();
 
-  // Game boundaries
-  const GAME_WIDTH = 1920;
-  const GAME_HEIGHT = 1080;
-  const WALL_THICKNESS = 15;
+  // Initialize game assets
+  const initializeAssets = () => {
+    k.loadSprite("background", "./NewPiskel.png");
+    k.loadSprite("characters", "./sprite.png", {
+      sliceY: 6,
+      sliceX: 6,
+      anims: {
+        "down-idle": 21,
+        "up-idle": 0,
+        "right-idle": 24,
+        "left-idle": 8,
+        right: { from: 25, to: 31, loop: true },
+        left: { from: 9, to: 15, loop: true },
+        down: { from: 17, to: 23, loop: true },
+        up: { from: 1, to: 7, loop: true },
+      },
+    });
+  };
 
-  // Load sprites
-  k.loadSprite("background", "./NewPiskel.png");
-  k.loadSprite("characters", "./sprite.png", {
-    sliceY: 6,
-    sliceX: 6,
-    anims: {
-      "down-idle": 21,
-      "up-idle": 0,
-      "right-idle": 24,
-      "left-idle": 8,
-      right: { from: 25, to: 31, loop: true },
-      left: { from: 9, to: 15, loop: true },
-      down: { from: 17, to: 23, loop: true },
-      up: { from: 1, to: 7, loop: true },
-    },
-  });
+  // Create game world
+  const createGameWorld = () => {
+    // Add background
+    k.add([k.sprite("background"), k.pos(0, -70), k.scale(8)]);
 
-  // Add background
-  k.add([k.sprite("background"), k.pos(0, -70), k.scale(8)]);
+    // Add walls
+    const walls = [
+      { width: GAME_CONFIG.width, height: GAME_CONFIG.wallThickness, x: 0, y: 0 },
+      { width: GAME_CONFIG.width, height: GAME_CONFIG.wallThickness, x: 0, y: GAME_CONFIG.height - GAME_CONFIG.wallThickness },
+      { width: GAME_CONFIG.wallThickness, height: GAME_CONFIG.height, x: 0, y: 0 },
+      { width: GAME_CONFIG.wallThickness, height: GAME_CONFIG.height, x: GAME_CONFIG.width - GAME_CONFIG.wallThickness, y: 0 }
+    ];
 
-  // Add walls
-  k.add([
-    k.rect(GAME_WIDTH, WALL_THICKNESS),
-    k.pos(0, 0),
-    k.color(0, 0, 0),
-  ]);
+    walls.forEach(wall => {
+      k.add([
+        k.rect(wall.width, wall.height),
+        k.pos(wall.x, wall.y),
+        k.color(0, 0, 0),
+      ]);
+    });
+  };
 
-  k.add([
-    k.rect(GAME_WIDTH, WALL_THICKNESS),
-    k.pos(0, GAME_HEIGHT - WALL_THICKNESS),
-    k.color(0, 0, 0),
-  ]);
-
-  k.add([
-    k.rect(WALL_THICKNESS, GAME_HEIGHT),
-    k.pos(0, 0),
-    k.color(0, 0, 0),
-  ]);
-
-  k.add([
-    k.rect(WALL_THICKNESS, GAME_HEIGHT),
-    k.pos(GAME_WIDTH - WALL_THICKNESS, 0),
-    k.color(0, 0, 0),
-  ]);
-
+  // Player creation
   const createPlayer = (id, initialPos = k.center()) => {
     return k.add([
       k.sprite("characters", { anim: "down-idle" }),
@@ -65,7 +68,7 @@ const initGame = () => {
       k.scale(1),
       {
         playerId: id,
-        speed: 300,
+        speed: GAME_CONFIG.playerSpeed,
         direction: k.vec2(0, 0),
         currentAnim: "down-idle",
       },
@@ -73,116 +76,119 @@ const initGame = () => {
     ]);
   };
 
-  // WebSocket event handlers
- // src/initGame.js
-websocketService.on('INIT', (data) => {
-  mainPlayer = createPlayer(data.playerId);
-  setupPlayerControls(mainPlayer);
-  
-  data.players.forEach((p) => {
-    if (p.id !== data.playerId) {
-      const remotePlayer = createPlayer(p.id, k.vec2(p.position.x, p.position.y));
-      otherPlayers.set(p.id, remotePlayer);
-    }
-  });
-});
-  websocketService.on('PLAYER_JOINED', (data) => {
-    const remotePlayer = createPlayer(data.player.id, k.vec2(data.player.position.x, data.player.position.y));
-    otherPlayers.set(data.player.id, remotePlayer);
-  });
-
-  websocketService.on('PLAYER_UPDATED', (data) => {
-    const player = otherPlayers.get(data.playerId);
-    if (player) {
-      player.pos = k.vec2(data.position.x, data.position.y);
-      
-      if (player.currentAnim !== data.animation) {
-        player.play(data.animation);
-        player.currentAnim = data.animation;
-      }
-    }
-  });
-
-  websocketService.on('PLAYER_LEFT', (data) => {
-    const player = otherPlayers.get(data.playerId);
-    if (player) {
-      player.destroy();
-      otherPlayers.delete(data.playerId);
-    }
-  });
-
+  // Collision detection
   const checkCollisionWithWalls = (pos) => {
     return (
-      pos.x < WALL_THICKNESS ||
-      pos.x > GAME_WIDTH - WALL_THICKNESS ||
-      pos.y < WALL_THICKNESS ||
-      pos.y > GAME_HEIGHT - WALL_THICKNESS
+      pos.x < GAME_CONFIG.wallThickness ||
+      pos.x > GAME_CONFIG.width - GAME_CONFIG.wallThickness ||
+      pos.y < GAME_CONFIG.wallThickness ||
+      pos.y > GAME_CONFIG.height - GAME_CONFIG.wallThickness
     );
   };
 
+  // Animation helper
+  const getNewAnimation = (direction, currentAnim) => {
+    if (direction.eq(k.vec2(0, 0))) {
+      return currentAnim.includes('idle') ? currentAnim : `${currentAnim}-idle`;
+    }
+    if (direction.x < 0) return "left";
+    if (direction.x > 0) return "right";
+    if (direction.y < 0) return "up";
+    if (direction.y > 0) return "down";
+    return currentAnim;
+  };
+
+  // Player controls
   const setupPlayerControls = (player) => {
     player.onUpdate(() => {
-      player.prevPos = player.pos.clone();
+      const prevPos = player.pos.clone();
       const prevAnim = player.getCurAnim().name;
-  
-      player.direction.x = 0;
-      player.direction.y = 0;
-  
-      if (k.isKeyDown("left")) player.direction.x = -1;
-      if (k.isKeyDown("right")) player.direction.x = 1;
-      if (k.isKeyDown("up")) player.direction.y = -1;
-      if (k.isKeyDown("down")) player.direction.y = 1;
-  
+
+      // Handle movement
+      player.direction = k.vec2(
+        (k.isKeyDown("right") ? 1 : 0) - (k.isKeyDown("left") ? 1 : 0),
+        (k.isKeyDown("down") ? 1 : 0) - (k.isKeyDown("up") ? 1 : 0)
+      );
+
       // Calculate new position
-      let newPos = player.pos.clone();
-      if (player.direction.x && player.direction.y) {
-        newPos = newPos.add(player.direction.scale(DIAGONAL_FACTOR * player.speed * k.dt()));
-      } else {
-        newPos = newPos.add(player.direction.scale(player.speed * k.dt()));
+      const moveScale = player.direction.x && player.direction.y ? 
+        GAME_CONFIG.diagonalFactor : 1;
+      const newPos = player.pos.add(
+        player.direction.scale(moveScale * player.speed * k.dt())
+      );
+
+      // Handle collisions and movement
+      if (!checkCollisionWithWalls(newPos)) {
+        player.pos = newPos;
       }
-  
-      // Only check wall collisions
-      const hasWallCollision = checkCollisionWithWalls(newPos);
-      const canMove = !hasWallCollision;
-  
-      // Animation logic
-      if (player.direction.eq(k.vec2(-1, 0)) && player.getCurAnim().name !== "left") {
-        player.play("left");
-        player.currentAnim = "left";
-      } else if (player.direction.eq(k.vec2(1, 0)) && player.getCurAnim().name !== "right") {
-        player.play("right");
-        player.currentAnim = "right";
-      } else if (player.direction.eq(k.vec2(0, -1)) && player.getCurAnim().name !== "up") {
-        player.play("up");
-        player.currentAnim = "up";
-      } else if (player.direction.eq(k.vec2(0, 1)) && player.getCurAnim().name !== "down") {
-        player.play("down");
-        player.currentAnim = "down";
-      } else if (player.direction.eq(k.vec2(0, 0)) && !player.getCurAnim().name.includes("idle")) {
-        const newAnim = `${player.getCurAnim().name}-idle`;
+
+      // Update animation
+      const newAnim = getNewAnimation(player.direction, prevAnim);
+      if (newAnim !== player.currentAnim) {
         player.play(newAnim);
         player.currentAnim = newAnim;
       }
-  
-      // Move if no wall collision
-      if (canMove) {
-        player.pos = newPos;
-      }
-  
-      // Keep in bounds (extra safety)
-      const margin = WALL_THICKNESS;
-      player.pos.x = Math.max(margin, Math.min(GAME_WIDTH - margin, player.pos.x));
-      player.pos.y = Math.max(margin, Math.min(GAME_HEIGHT - margin, player.pos.y));
-  
-      // Send updates
-      if (!player.prevPos.eq(player.pos) || prevAnim !== player.getCurAnim().name) {
+
+      // Send updates if position or animation changed
+      if (!prevPos.eq(player.pos) || prevAnim !== player.currentAnim) {
         websocketService.send({
           type: 'PLAYER_UPDATE',
           position: { x: player.pos.x, y: player.pos.y },
-          animation: player.getCurAnim().name
+          animation: player.currentAnim
         });
       }
     });
+  };
+
+  // WebSocket event handlers
+  const setupWebSocketHandlers = () => {
+    websocketService.on('INIT', (data) => {
+      mainPlayerId = data.playerId;
+      mainPlayer = createPlayer(data.playerId);
+      setupPlayerControls(mainPlayer);
+      
+      data.players.forEach((p) => {
+        if (p.id !== data.playerId) {
+          otherPlayers.set(p.id, createPlayer(p.id, k.vec2(p.position.x, p.position.y)));
+        }
+      });
+    });
+
+    websocketService.on('PLAYER_JOINED', (data) => {
+      otherPlayers.set(
+        data.player.id,
+        createPlayer(data.player.id, k.vec2(data.player.position.x, data.player.position.y))
+      );
+    });
+
+    websocketService.on('PLAYER_UPDATED', (data) => {
+      const player = otherPlayers.get(data.playerId);
+      if (player) {
+        player.pos = k.vec2(data.position.x, data.position.y);
+        if (player.currentAnim !== data.animation) {
+          player.play(data.animation);
+          player.currentAnim = data.animation;
+        }
+      }
+    });
+
+    websocketService.on('PLAYER_LEFT', (data) => {
+      const player = otherPlayers.get(data.playerId);
+      if (player) {
+        player.destroy();
+        otherPlayers.delete(data.playerId);
+      }
+    });
+  };
+
+  // Initialize game
+  initializeAssets();
+  createGameWorld();
+  setupWebSocketHandlers();
+
+  // Return cleanup function
+  return () => {
+    otherPlayers.clear();
   };
 };
 

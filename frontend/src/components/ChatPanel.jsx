@@ -1,11 +1,9 @@
-// src/components/ChatPanel.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import "./ChatPanel.css";
 
-const ChatPanel = ({ isOpen, onClose, videoEnabled, audioEnabled }) => {
+const ChatPanel = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const videoRef = useRef();
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -18,17 +16,8 @@ const ChatPanel = ({ isOpen, onClose, videoEnabled, audioEnabled }) => {
   return (
     <div className={`chat-panel ${isOpen ? 'open' : ''}`}>
       <div className="chat-header">
-        <h3>Chat & Video</h3>
+        <h3>Chat</h3>
         <button className="close-button" onClick={onClose}>×</button>
-      </div>
-      
-      <div className="video-container">
-        {videoEnabled && (
-          <div className="video-grid">
-            <video ref={videoRef} autoPlay muted playsInline />
-            {/* Add other participant videos here */}
-          </div>
-        )}
       </div>
 
       <div className="chat-container">
