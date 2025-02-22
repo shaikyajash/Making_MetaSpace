@@ -78,7 +78,14 @@ export const SocketProvider = ({ children }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [
+    setSocket,
+    setIsConnected,
+    setPlayerId,
+    setPlayers,
+
+
+  ]);
 
   const value = {
     socket,
