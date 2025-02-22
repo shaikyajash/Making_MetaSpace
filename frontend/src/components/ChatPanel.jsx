@@ -1,146 +1,203 @@
+// frontend/src/components/ChatPanel.jsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./ChatPanel.css";
 import { useSocket } from "../context/SocketConmtext";
-import { io } from "socket.io-client";
-
-const ICE_SERVERS = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-};
 
 const ChatPanel = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([]);
-  const pcRef = useRef(null);
-  const socketRef = useRef(null);
-  const dataChannelRef = useRef(null);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isChannelOpen, setIsChannelOpen] = useState(false);
+  const { socket } = useSocket();
   const roomId = localStorage.getItem("room");
 
-  const handleDataChannelOpen = useCallback(() => {
-    console.log("Data channel opened");
-  }, []);
+  const dataChannelRef = useRef(null);
+  const pcRef = useRef(null);
 
-  const handleDataChannelMessage = useCallback((event) => {
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { sender: "other", text: event.data },
-    ]);
-  }, []);
+  // Initialize WebRTC connection
+  const initializePeerConnection = useCallback(() => {
+    if (!socket) return;
 
-  const handleICECandidateEvent = useCallback(
-    (event) => {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
       if (event.candidate) {
-        socketRef.current.emit("ice-candidate", {
+        socket.emit("ice-candidate", {
           roomId,
           candidate: event.candidate,
         });
       }
-    },
-    [roomId]
-  );
+    };
 
-  const handleDataChannelEvent = useCallback(
-    (event) => {
-      const receiveChannel = event.channel;
-      receiveChannel.onmessage = handleDataChannelMessage;
-    },
-    [handleDataChannelMessage]
-  );
+    // Handle connection state changes
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state:", pc.connectionState);
+    };
 
-  const handleSocketConnect = useCallback(() => {
-    console.log("Connected to server");
-    socketRef.current.emit("join-room", roomId);
-  }, [roomId]);
+    // Handle ICE connection state changes
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+    };
 
-  const handleUserConnected = useCallback(
-    async (userId) => {
-      console.log("User connected", userId);
-      const offer = await pcRef.current.createOffer();
-      await pcRef.current.setLocalDescription(offer);
-      socketRef.current.emit("offer", { roomId, offer });
-    },
-    [roomId]
-  );
+    pcRef.current = pc;
+    createDataChannel();
 
-  const handleOffer = useCallback(
-    async ({ offer }) => {
-      await pcRef.current.setRemoteDescription(offer);
-      const answer = await pcRef.current.createAnswer();
-      await pcRef.current.setLocalDescription(answer);
+    return pc;
+  }, [socket, roomId]);
 
-      socketRef.current.emit("answer", { roomId, answer });
-    },
-    [roomId]
-  );
+  // Create and handle data channel
+  const createDataChannel = useCallback(() => {
+    if (!pcRef.current) return;
 
-  const handleAnswer = useCallback(async ({ answer }) => {
-    await pcRef.current.setRemoteDescription(answer);
-  }, []);
+    try {
+      const dataChannel = pcRef.current.createDataChannel("chat", {
+        ordered: true,
+      });
 
-  const handleICECandidate = useCallback(async ({ candidate }) => {
-    if (candidate) {
-      await pcRef.current.addIceCandidate(candidate);
+      dataChannel.onopen = () => {
+        console.log("Data channel opened");
+        setIsChannelOpen(true);
+      };
+
+      dataChannel.onclose = () => {
+        console.log("Data channel closed");
+        setIsChannelOpen(false);
+      };
+
+      dataChannel.onmessage = (event) => {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { sender: "other", text: event.data },
+        ]);
+      };
+
+      dataChannelRef.current = dataChannel;
+    } catch (error) {
+      console.error("Error creating data channel:", error);
     }
   }, []);
 
+  // Handle receiving data channel
+  const handleReceiveDataChannel = useCallback((event) => {
+    const receiveChannel = event.channel;
+
+    receiveChannel.onopen = () => {
+      console.log("Receive channel opened");
+      setIsChannelOpen(true);
+    };
+
+    receiveChannel.onclose = () => {
+      console.log("Receive channel closed");
+      setIsChannelOpen(false);
+    };
+
+    receiveChannel.onmessage = (event) => {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { sender: "other", text: event.data },
+      ]);
+    };
+
+    dataChannelRef.current = receiveChannel;
+  }, []);
+
   useEffect(() => {
-    const socket = io("http://localhost:5000");
-    socketRef.current = socket;
+    if (!socket) return;
 
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    pcRef.current = pc;
+    const pc = initializePeerConnection();
+    if (!pc) return;
 
-    //Data channel setup for chat messages
-    const dataChannel = pc.createDataChannel("chat");
-    dataChannelRef.current = dataChannel;
-    dataChannel.onopen = handleDataChannelOpen;
-    dataChannel.onmessage = handleDataChannelMessage;
+    pc.ondatachannel = handleReceiveDataChannel;
 
-    //Socket event handlers
-    socket.on("connect", handleSocketConnect);
-    socket.on("user-connected", handleUserConnected);
-    socket.on("offer", handleOffer);
-    socket.on("answer", handleAnswer);
-    socket.on("ice-candidate", handleICECandidate);
+    // Socket event handlers
+    socket.on("user-connected", async (userId) => {
+      try {
+        console.log("User connected, creating offer");
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit("offer", { roomId, offer });
+      } catch (error) {
+        console.error("Error creating offer:", error);
+      }
+    });
 
-    //Peer connection event handlers
-    pc.onicecandidate = handleICECandidateEvent;
-    pc.ondatachannel = handleDataChannelEvent;
+    socket.on("offer", async ({ offer }) => {
+      try {
+        console.log("Received offer, creating answer");
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit("answer", { roomId, answer });
+      } catch (error) {
+        console.error("Error handling offer:", error);
+      }
+    });
 
-    
-  }, [
-    handleDataChannelOpen,
-    handleDataChannelMessage,
-    handleSocketConnect,
-    handleUserConnected,
-    handleOffer,
-    handleAnswer,
-    handleICECandidate,
-    handleICECandidateEvent,
-    handleDataChannelEvent,
-  ]);
+    socket.on("answer", async ({ answer }) => {
+      try {
+        console.log("Received answer");
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      } catch (error) {
+        console.error("Error handling answer:", error);
+      }
+    });
+
+    socket.on("ice-candidate", async ({ candidate }) => {
+      try {
+        if (candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } catch (error) {
+        console.error("Error handling ICE candidate:", error);
+      }
+    });
+
+    // Join the room
+    socket.emit("join-room", roomId);
+
+    return () => {
+      if (dataChannelRef.current) {
+        dataChannelRef.current.close();
+      }
+      if (pcRef.current) {
+        pcRef.current.close();
+      }
+      socket.off("user-connected");
+      socket.off("offer");
+      socket.off("answer");
+      socket.off("ice-candidate");
+    };
+  }, [socket, roomId, initializePeerConnection, handleReceiveDataChannel]);
 
   const sendMessage = useCallback(
-    ()=>{
-      if (
-        dataChannelRef.current &&
-        dataChannelRef.current.readyState === "open"
-      ) {
-        dataChannelRef.current.send(messages);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: "You", text: messages },
-        ]);
-        setMessages("");
-      } else {
-        console.error("Data channel is not open");
-      }
+    (e) => {
+      e.preventDefault();
+      if (!inputMessage.trim() || !isChannelOpen) return;
 
-    },[messages]
-  )
+      try {
+        if (dataChannelRef.current?.readyState === "open") {
+          dataChannelRef.current.send(inputMessage);
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { sender: "me", text: inputMessage },
+          ]);
+          setInputMessage("");
+        } else {
+          console.warn("Data channel is not open. Current state:", dataChannelRef.current?.readyState);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+    },
+    [inputMessage, isChannelOpen]
+  );
 
   return (
     <div className={`chat-panel ${isOpen ? "open" : ""}`}>
       <div className="chat-header">
-        <h3>Chat</h3>
+        <h3>Chat {isChannelOpen ? "(Connected)" : "(Connecting...)"}</h3>
         <button className="close-button" onClick={onClose}>
           ×
         </button>
@@ -149,20 +206,23 @@ const ChatPanel = ({ isOpen, onClose }) => {
       <div className="chat-container">
         <div className="messages">
           {messages.map((msg, index) => (
-            <div key={index} className={`messages ${msg.sender}`}>
+            <div key={index} className={`message ${msg.sender}`}>
               {msg.text}
             </div>
           ))}
         </div>
 
-        <form onSubmit={sendMessage} className="messages-input">
+        <form onSubmit={sendMessage} className="message-input">
           <input
             type="text"
-            value={messages}
-            onChange={(e) => setMessages(e.target.value)}
-            placeholder="Type a messages..."
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder={isChannelOpen ? "Type a message..." : "Connecting..."}
+            disabled={!isChannelOpen}
           />
-          <button type="submit">Send</button>
+          <button type="submit" disabled={!isChannelOpen}>
+            Send
+          </button>
         </form>
       </div>
     </div>
