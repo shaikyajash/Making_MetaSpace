@@ -6,21 +6,17 @@ import "./index.css";
 import App from "./App";
 import { SocketProvider } from "./context/SocketConmtext";
 
+import { BrowserRouter } from "react-router-dom";
+
 const rootElement = document.getElementById("root");
 
 createRoot(rootElement).render(
   <StrictMode>
     <SocketProvider>
-    <App/>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </SocketProvider>
   </StrictMode>
 );
 
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', async () => {
-  
-    initGame();
-    const gameCanvas = document.getElementById("game");
-    gameCanvas.focus(); // Ensure the canvas is focused
-  
-});

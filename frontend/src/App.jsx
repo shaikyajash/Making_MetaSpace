@@ -1,49 +1,19 @@
 import React, { useState } from 'react';
-import ChatPanel from './components/ChatPanel'; 
-import Navbar from './components/NavBar';
-import GameWrapper from './components/GameWrapper';
 import './App.css';
+import GameScreen from './screens/GameScreen';
+import { Route, Routes } from 'react-router-dom';
+import Lobby from './screens/Lobby';
 
 
 const App = () => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [videoEnabled, setVideoEnabled] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
 
-  const handleToggleChat = () => {
-    setIsChatOpen(!isChatOpen);
-  };
+  return(
+    <Routes>
+      <Route path='/' element={<Lobby/>} />
+      <Route path='/room' element={<GameScreen/>} />
 
-  const handleToggleVideo = () => {
-    setVideoEnabled(!videoEnabled);
-  };
-
-  const handleToggleAudio = () => {
-    setAudioEnabled(!audioEnabled);
-  };
-
-  return (
-    <>
-    <div className='Game'  >
-
-    <GameWrapper/>
-    </div>
-      <ChatPanel 
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        videoEnabled={videoEnabled}
-        audioEnabled={audioEnabled}
-      />
-      <Navbar 
-        onToggleChat={handleToggleChat}
-        isChatOpen={isChatOpen}
-        videoEnabled={videoEnabled}
-        audioEnabled={audioEnabled}
-        onToggleVideo={handleToggleVideo}
-        onToggleAudio={handleToggleAudio}
-      />
-    </>
-  );
+    </Routes>
+  ) 
 };
 
 export default App;
