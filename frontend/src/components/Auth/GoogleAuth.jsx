@@ -28,7 +28,7 @@ const GoogleAuth = () => {
         login(accessToken);
       }
 
-      navigate("/profile");
+      navigate("/");
     } catch (error) {
       console.error(
         "Error during Google Signup:",
