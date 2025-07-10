@@ -1,0 +1,83 @@
+/* Global Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Open Sans', sans-serif;
+  background-color: #f5f5f7;
+}
+
+/* Lobby Container */
+.lobby-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 20px;
+}
+
+/* Lobby Form */
+.lobby-form {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-form label {
+  font-size: 14px;
+  color: #333;
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.lobby-input {
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  height: 45px;
+  padding: 0 14px;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.lobby-input:focus {
+  border-color: #2d79f3;
+  box-shadow: 0 0 5px rgba(45, 121, 243, 0.2);
+  outline: none;
+}
+
+.lobby-button {
+  background-color: #151717;
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  height: 48px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.lobby-button:hover {
+  background-color: #252727;
+}
+
+.lobby-button:active {
+  transform: scale(0.97);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .lobby-form {
+    width: 90%;
+    padding: 25px;
+  }
+}

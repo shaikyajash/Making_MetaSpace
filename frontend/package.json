@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.2",
+    "axios": "^1.10.0",
     "gsap": "^3.12.7",
     "jotai": "^2.10.1",
     "kaboom": "^3000.1.17",

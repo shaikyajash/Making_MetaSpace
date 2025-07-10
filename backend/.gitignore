@@ -1,4 +1,6 @@
-# Node.js dependencies
+# ----------------------------------
+# 📦 Node.js & npm/Yarn/Pnpm
+# ----------------------------------
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -8,27 +10,47 @@ lerna-debug.log*
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
 # Logs
-logs
+logs/
 *.log
-logs/*
-debug.log
-yarn-error.log
 
 # Build output
 dist/
 build/
 .out/
 .next/
+.cache/
+.temp/
+.esbuild/
+.vite/
 
-# Editor and OS files
-.DS_Store
-Thumbs.db
+# ----------------------------------
+# ⚛️ React / Vite / Next.js / CRA
+# ----------------------------------
+*.local
+*.env.local
+*.env.development.local
+*.env.production.local
+
+# Static output (if exported)
+out/
+
+# ----------------------------------
+# 🧪 Testing & Coverage
+# ----------------------------------
+coverage/
+jest/
+test-results/
+cypress/screenshots/
+cypress/videos/
+playwright-report/
+.vitest/
+
+# ----------------------------------
+# 🧠 IDEs & Editors
+# ----------------------------------
 .vscode/
 .idea/
 *.suo
@@ -36,8 +58,36 @@ Thumbs.db
 *.njsproj
 *.sln
 
-# Testing
-coverage/
-jest/
-cypress/screenshots/
-cypress/videos/
+# ----------------------------------
+# 💻 OS Files
+# ----------------------------------
+.DS_Store
+Thumbs.db
+
+# ----------------------------------
+# 🔧 Optional: PM2, Docker
+# ----------------------------------
+.pids/
+*.pid
+dump.rdb
+pm2.log
+
+# Docker
+docker-compose.override.yml
+
+# ----------------------------------
+# ⚠️ Optional: Misc Tools
+# ----------------------------------
+*.tgz
+*.swp
+*.bak
+*.orig
+
+# ----------------------------------
+# ⛔ Prevent sensitive or unwanted files
+# ----------------------------------
+*.key
+*.pem
+*.crt
+firebase-debug.log
+firebase-debug.*
