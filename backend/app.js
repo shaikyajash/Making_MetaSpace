@@ -23,7 +23,6 @@ app.use("/api", testRoutes);
 // io.use(verifySocketAuth);
 
 io.on("connection", (socket) => {
-  console.log("a client connected");
   const playerId = uuidv4();
 
   // Initialize player
@@ -82,7 +81,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     players.delete(playerId);
     io.emit("PLAYER_LEFT", { playerId });
-    console.log("a client disconnected", socket.id);
+   
   });
 });
 
