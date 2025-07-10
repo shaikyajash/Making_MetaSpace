@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import ChatPanel from '../components/ChatPanel';
 import GameWrapper from '../components/GameWrapper';
-import Navbar from '../components/NavBar';
+import Navbar from '../components/Navbar.jsx';
 
 const GameScreen = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
