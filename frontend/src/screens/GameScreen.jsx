@@ -40,6 +40,9 @@ const GameScreen = () => {
           onToggleVideo={handleToggleVideo}
           onToggleAudio={handleToggleAudio}
         />
+
+
+
       </>
     );
 }
