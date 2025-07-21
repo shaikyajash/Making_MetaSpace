@@ -191,10 +191,6 @@ The game uses Kaplay for 2D rendering with the following settings:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🐛 Known Issues
 
 - WebRTC connection may fail on some networks due to firewall restrictions
